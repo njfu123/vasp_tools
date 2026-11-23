@@ -1,0 +1,15 @@
+# Synopsys VCS triage preset (loaded when --simulator vcs)
+simulator: vcs
+description: >
+  Native VCS message IDs (Error-[...] / Warning-[...]), runtime Error: lines,
+  assertion failure wording, and optional extra hooks below.
+
+# Optional extra regex hooks (kind must be vcs_error or vcs_warning)
+extra_patterns:
+  # Example: custom SNPS message family
+  # - kind: vcs_error
+  #   regex: "Error-\\[USER-\\d+\\]"
+
+notes:
+  - "Strip volatile: Time:, at time, File/Line, Module/Scope/Region, vcs_sim_time"
+  - "Seeds: +ntb_random_seed=, UVM random seed lines in VCS banner"

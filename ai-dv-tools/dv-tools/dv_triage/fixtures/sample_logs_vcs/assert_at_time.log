@@ -1,0 +1,7 @@
+Synopsys VCS Version W-2024.09
+vcs_sim_time=5000000
+*** Error: Assertion tb.axi_protocol.assert_ready_holds failed at time 5000 ns
+  File "tb/axi_sva.sv" Line 42
+Scope: tb.axi_protocol
+offending expression: (ready === 1'b1)
+Simulation complete via $finish

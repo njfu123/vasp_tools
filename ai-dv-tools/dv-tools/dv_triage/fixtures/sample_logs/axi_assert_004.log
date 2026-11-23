@@ -1,0 +1,4 @@
+UVM_INFO test axi_assert_004 +ntb_random_seed=99887
+Assertion axi_protocol_checker.assert_valid_ready failed: valid high without ready within 5 cycles
+** Error: SVA violation in module axi_if @ 1200ps
+pid: 5566

@@ -1,0 +1,5 @@
+UVM_INFO @ 08:01:02.456 ns reporter [RNTST] Running test uart_rand_002
+seed=777777 pid=4421
+UVM_ERROR ../../tb/uvm_test_top.env.sb [ADDR] mismatch expected=0x10 got=0x11 @ 999 ns
+UVM_ERROR ../../tb/uvm_test_top.env.sb [ADDR] mismatch expected=0x10 got=0x11 @ 1001 ns
+---

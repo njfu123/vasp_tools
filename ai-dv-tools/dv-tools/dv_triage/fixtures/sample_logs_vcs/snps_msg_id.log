@@ -1,0 +1,10 @@
+Command: vcs -full64 -sverilog +ntb_random_seed=88223344 -timescale=1ns/1ps
+random seed used = 88223344
+UVM_INFO @ 0: reporter [RNTST] Running test spi_snps_fail
+Time: 1200 ns  Scope: tb.uvm_test_top  Region: misc
+Error-[TCHK_TSETUP] tb.clk_core (Setup time check failed)
+  Time: 1200 ns
+  File "rtl/core_clk.sv" Line 88
+  Module: core_clk
+  Offending signal: data_in
+Simulation finished with errors

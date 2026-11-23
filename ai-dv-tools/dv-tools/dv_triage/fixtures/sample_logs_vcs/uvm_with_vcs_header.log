@@ -1,0 +1,7 @@
+VCS U-2023.12
++ntb_random_seed=4410022
+UVM random seed = 4410022
+Time: 99000 ps
+UVM_ERROR /proj/tb/uvm_test_top.env.sb [DATA] mismatch expected=0xdead got=0xbeef at time 99000 ps
+Error: DPI routine register_map_lookup failed (SNPS-DPI-404)
+Simulation finished with errors

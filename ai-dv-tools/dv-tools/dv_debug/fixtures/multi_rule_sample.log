@@ -1,0 +1,5 @@
+UVM_INFO @ 10:00:00 Running test combo_fail_007
+UVM_ERROR ../../tb/uvm_test_top.env.sb [ADDR] mismatch expected=0xAA got=0xAB
+UVM_FATAL ../../tb/uvm_test_top.env [PHASE] objection count 1 at run_phase end — drain timeout
+** UVM phase objection still raised in env.vseq
+SIMULATION TIMEOUT after 500000 ns

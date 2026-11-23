@@ -1,0 +1,6 @@
+UVM_INFO @ 12:34:56.123 ns reporter [RNTST] Running test uart_rand_001
+** UVM started @ 1000 ns
+seed=48291033 pid=9912
+UVM_ERROR ../../tb/uvm_test_top.env.sb [ADDR] mismatch expected=0x10 got=0x11 @ 5432100 ns
+UVM_ERROR ../../tb/uvm_test_top.env.sb [ADDR] mismatch expected=0x10 got=0x11 @ 5432199 ns
+Simulation finished with errors

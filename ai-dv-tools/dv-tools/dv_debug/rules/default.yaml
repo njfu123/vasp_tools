@@ -1,0 +1,272 @@
+# Waveform-less debug rule library (v1)
+# Each rule: id, title, match (regex list), hypotheses, checks, escalate_when
+
+rules:
+  - id: R01
+    title: X-propagation / unknown X on net
+    priority: 90
+    match:
+      - "(?i)x-?prop"
+      - "(?i)x propagation"
+      - "(?i)received\\s+X\\s+value"
+    hypotheses:
+      - Uninitialized register or reset sequence too short
+      - Clock/reset domain crossing glitch without synchronizer
+    checks:
+      - Re-run with `+xprop=report` or vendor X-prop reporting enabled
+      - Increase reset stretch in virtual sequence; confirm `reset_n` deassert timing
+      - Search log for `+define+` / plusargs that disable X-prop accumulation
+    escalate_when:
+      - X-prop persists after reset fix and appears on DUT boundary signals
+
+  - id: R02
+    title: Assertion failure (SVA / immediate assert)
+    priority: 85
+    match:
+      - "(?i)assertion\\s+.*failed"
+      - "(?i)sva\\s+.*violation"
+      - "(?i)\\*\\*\\s*Error:.*assert"
+      - "(?i)offending\\s+(signal|expression)"
+    hypotheses:
+      - Protocol timing violation vs checker parameter mismatch
+      - Stimulus ordering does not match assumed valid/ready contract
+    checks:
+      - Note hierarchy and assertion name from log; compare to SVA default parameters
+      - Re-run single test with `+UVM_VERBOSITY=UVM_HIGH` on scoreboard/env
+      - Check if assert control plusarg disabled concurrent assertions inadvertently
+    escalate_when:
+      - Checker params match spec and failure is intermittent across seeds
+
+  - id: R03
+    title: assert control / plusarg disable
+    priority: 70
+    match:
+      - "(?i)assert\\s+control"
+      - "(?i)\\+assert\\w*"
+      - "(?i)assertions?\\s+off"
+    hypotheses:
+      - Regression Makefile passed assert-off for debug but masked real bug
+      - Partial assert kill left concurrent checkers disabled
+    checks:
+      - Grep Makefile/plusargs for `+assert`, `-assert`, `-noassert`
+      - Compare nightly vs local plusarg bundle
+    escalate_when:
+      - Assertions enabled locally still fail
+
+  - id: R04
+    title: UVM phase objection / drain time
+    priority: 75
+    match:
+      - "(?i)uvm.*objection"
+      - "(?i)objection.*count"
+      - "(?i)drain\\s*time"
+      - "(?i)\\*\\*\\s+UVM\\s+.*phase"
+    hypotheses:
+      - Sequence raised objection not dropped before phase end
+      - Background process still running at test timeout
+    checks:
+      - Enable `UVM_OBJECTION_TRACE` or high verbosity on objection category
+      - Inspect sequences for `raise_objection` without matching `drop_objection`
+    escalate_when:
+      - Objection trace shows zero leak but hang remains
+
+  - id: R05
+    title: UVM ERROR/FATAL (generic)
+    priority: 60
+    match:
+      - "(?i)UVM_ERROR"
+      - "(?i)UVM_FATAL"
+    hypotheses:
+      - Scoreboard/DUT mismatch or configuration drift
+      - Factory override missing for this test variant
+    checks:
+      - Extract component path from message; bump verbosity on that subtree
+      - Diff `uvm_config_db` settings vs passing sibling test
+    escalate_when:
+      - Same message after config_db audit and verbosity bump
+
+  - id: R06
+    title: Scoreboard address/data mismatch
+    priority: 80
+    match:
+      - "(?i)\\[ADDR\\].*mismatch"
+      - "(?i)scoreboard.*mismatch"
+      - "(?i)expected=.*got="
+    hypotheses:
+      - Address map or endianness mismatch in predictor
+      - Stimulus applied before env 'ready' phase
+    checks:
+      - Run one seed with scoreboard verbosity UVM_FULL
+      - Verify register model address mapping vs RTL decode
+    escalate_when:
+      - Predictor and monitor paths disagree under wave-free log analysis
+
+  - id: R07
+    title: Simulation timeout
+    priority: 95
+    match:
+      - "(?i)SIMULATION\\s+TIMEOUT"
+      - "(?i)TIME\\s+LIMIT\\s+EXCEEDED"
+    hypotheses:
+      - Live-lock in UVM phase or unterminated fork
+      - DUT not responding — vip timeout too aggressive
+    checks:
+      - Reduce stimulus length; add heartbeat `$display` in TB (non-synth)
+      - Check default timeout plusarg vs test-specific override
+    escalate_when:
+      - Timeout with zero UVM objections and idle bus in last 1k cycles (needs waves)
+
+  - id: R08
+    title: uvm_config_db set/get failure
+    priority: 72
+    match:
+      - "(?i)uvm_config_db"
+      - "(?i)config.*not\\s+found"
+      - "(?i)WARNING.*config"
+    hypotheses:
+      - Typo in field/instance path; set after get in build_phase order
+      - Interface not passed through `config_db` to lower agent
+    checks:
+      - Re-run with `+UVM_CONFIG_DB_TRACE` and capture dump
+      - Align instance string with `uvm_test_top.env.*` paths in log
+    escalate_when:
+      - Trace shows set but get uses different instance wildcard
+
+  - id: R09
+    title: DPI / PLI load or link
+    priority: 50
+    match:
+      - "(?i)DPI"
+      - "(?i)PLI"
+      - "(?i)dlopen"
+    hypotheses:
+      - Wrong `LD_LIBRARY_PATH` or mismatched simulator DPI compile
+    checks:
+      - Verify DPI .so built for same simulator bitness
+      - Compare elaboration log for missing `-sv_lib`
+    escalate_when:
+      - Elab clean but DPI symbol missing at runtime
+
+  - id: R10
+    title: Factory override / type mismatch
+    priority: 55
+    match:
+      - "(?i)factory"
+      - "(?i)type\\s+mismatch"
+      - "(?i)create_component"
+    hypotheses:
+      - Test did not apply required factory override for agent variant
+    checks:
+      - Grep test for `set_type_override`; compare with passing test
+    escalate_when:
+      - Overrides match reference yet wrong type still constructed
+
+  - id: R11
+    title: Sequence item rand failure
+    priority: 58
+    match:
+      - "(?i)randomize\\s+failed"
+      - "(?i)pre_randomize"
+      - "(?i)constraint.*conflict"
+    hypotheses:
+      - Over-constrained sequence item vs DUT mode pins
+    checks:
+      - Log constraint solver output (`+ntb_solver_debug` vendor-specific)
+      - Relax or split constraints in sequence layer
+    escalate_when:
+      - Solver debug inconclusive and failure seed-dependent
+
+  - id: R12
+    title: VIP back-pressure / valid-ready stall
+    priority: 68
+    match:
+      - "(?i)valid.*ready"
+      - "(?i)back.?pressure"
+      - "(?i)stall"
+    hypotheses:
+      - Master keeps `valid` high; slave `ready` never asserted
+    checks:
+      - Increase slave agent ready delay in config_db for debug
+      - Check clock gating or reset on slave interface
+    escalate_when:
+      - Ready never toggles in last N transactions (wave check)
+
+  - id: R13
+    title: Reset deassert too early
+    priority: 65
+    match:
+      - "(?i)reset.*glitch"
+      - "(?i)reset_n"
+      - "(?i)async\\s+reset"
+    hypotheses:
+      - Reset sequence violates minimum reset pulse width
+    checks:
+      - Extend reset hold in virtual sequence; align to clock edge
+    escalate_when:
+      - Reset timing fixed in log-level checks but X-prop remains
+
+  - id: R14
+    title: Coverage / test not finishing
+    priority: 40
+    match:
+      - "(?i)coverage"
+      - "(?i)sample\\s+event"
+    hypotheses:
+      - Test waits for covergroup bin that cannot be hit with current stimulus
+    checks:
+      - List unhit bins from URG or log hints; adjust directed phase
+    escalate_when:
+      - Bin requires internal node visibility only visible in waves
+
+  - id: R15
+    title: Plusarg / mode pin mismatch
+    priority: 62
+    match:
+      - "(?i)\\+define\\+"
+      - "(?i)plusarg"
+      - "(?i)illegal\\s+mode"
+    hypotheses:
+      - Test plusargs select DUT mode incompatible with sequence library
+    checks:
+      - Diff plusargs vs reference regression command line in log header
+    escalate_when:
+      - Plusargs match gold list but mode error persists
+
+  - id: R16
+    title: UVM_WARNING storm
+    priority: 45
+    match:
+      - "(?i)UVM_WARNING"
+    hypotheses:
+      - Degraded but non-fatal condition may precede real failure
+    checks:
+      - Treat as secondary; focus on earliest ERROR/FATAL above in snippet
+    escalate_when:
+      - WARNING count explodes with same id as eventual ERROR
+
+  - id: R17
+    title: Memory / mailbox null handle
+    priority: 52
+    match:
+      - "(?i)null\\s+handle"
+      - "(?i)mailbox"
+      - "(?i)segfault|SIGSEGV"
+    hypotheses:
+      - TB component not constructed before use in test
+    checks:
+      - Verify `create` order in env vs test `run_phase`
+    escalate_when:
+      - Reproduces only under optimized build (needs sim + waves)
+
+  - id: R18
+    title: Elaboration-time bind/SVA mismatch
+    priority: 48
+    match:
+      - "(?i)elaboration"
+      - "(?i)bind\\s+instance"
+    hypotheses:
+      - SVA bind path wrong after hierarchy rename
+    checks:
+      - Grep elab log for bind warnings separate from this sim.log
+    escalate_when:
+      - Sim reached run-time — elab rules not applicable; use waves

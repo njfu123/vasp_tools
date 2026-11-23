@@ -1,0 +1,5 @@
+Warning-[TFWIDT] testbench/tb_top.sv (width mismatch ignored)
+  Time: 200 ns
+  Module: tb_top
+UVM_INFO reporter: test passed with warnings
+Simulation finished successfully

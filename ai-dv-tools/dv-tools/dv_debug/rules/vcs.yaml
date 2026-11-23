@@ -1,0 +1,52 @@
+# VCS-specific rules merged with default.yaml when --simulator vcs (default)
+rules:
+  - id: R19
+    title: VCS SNPS message Error-[...]
+    priority: 82
+    match:
+      - "(?i)Error-\\[[A-Z0-9_-]+\\]"
+      - "(?i)Error:\\s+DPI"
+      - "(?i)SNPS-DPI"
+    hypotheses:
+      - Timing/checker violation reported as native VCS message ID
+      - DPI compile or link skew vs VCS build bitness
+    checks:
+      - Open the Error-[...] id in SolvNet/docs; note whether timing (TCHK) or elaboration (XM*)
+      - Compare `vcs -help` compile line in log header vs local gold command
+      - For DPI, verify `-CFLAGS` / `-LDFLAGS` and same VCS version as nightly
+    escalate_when:
+      - Message persists after matching compile flags and DPI .so rebuild
+
+  - id: R20
+    title: VCS assertion / +vcs+loopreport / -assert
+    priority: 84
+    match:
+      - "(?i)offending\\s+(signal|expression)"
+      - "(?i)\\+vcs\\+loopreport"
+      - "(?i)\\+vcs\\+xprop"
+      - "(?i)-assert\\b"
+    hypotheses:
+      - Assertion failed at reported vcs_sim_time; concurrent assert accidentally disabled
+      - X-prop or loop-report enabled only in debug build and masks real X sources
+    checks:
+      - Grep regression plusargs for `-assert` / `+ntb_enable_diag` / `+vcs+xprop`
+      - Re-run with `+vcs+loopreport` only if not already in failing command line
+      - Note Module/Scope/Region from VCS banner; compare SVA bind path
+    escalate_when:
+      - Assertions on, parameters verified, failure reproducible on single seed
+
+  - id: R21
+    title: VCS verbosity / UVM report in VCS log
+    priority: 58
+    match:
+      - "(?i)\\+UVM_VERBOSITY"
+      - "(?i)UVM random seed"
+      - "(?i)\\+ntb_random_seed"
+    hypotheses:
+      - Regression runs quiet UVM; VCS-native errors precede suppressed UVM context
+      - Seed mismatch between local re-run and farm wrapper
+    checks:
+      - Capture full plusarg line from log; re-run with `+UVM_VERBOSITY=UVM_HIGH`
+      - Pin `+ntb_random_seed=` from log when reproducing
+    escalate_when:
+      - High verbosity still leaves only Error-[...] without hierarchical path

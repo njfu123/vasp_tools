@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dv-tools"
+version = "0.1.0"
+description = "DV regression log triage (Tool 01) and waveform-less debug helper (Tool 06)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "typer>=0.9.0",
+    "pyyaml>=6.0",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+minhash = ["datasketch>=1.6.0"]
+dev = ["pytest>=7.0"]
+
+[project.scripts]
+dv-triage = "dv_triage.cli:app_triage"
+dv-debug = "dv_debug.cli:app_debug"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dv_triage*", "dv_debug*"]
+
+[tool.setuptools.package-data]
+dv_debug = ["rules/*.yaml"]
+dv_triage = ["fixtures/sample_logs/*", "fixtures/sample_logs_vcs/*", "presets/*.yaml"]
+
+[tool.pytest.ini_options]
+testpaths = ["dv_triage/tests", "dv_debug/tests"]
